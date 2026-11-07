@@ -57,11 +57,6 @@ export default function HomeScreen() {
             >
               <ThemedView type="backgroundElement" style={styles.linkButton}>
                 <ThemedText type="link">{mystery} Mysteries</ThemedText>
-                <SymbolView
-                  tintColor={theme.text}
-                  name={{ ios: 'arrow.up.right.square', android: 'link', web: 'link' }}
-                  size={20}
-                />
               </ThemedView>
             </Pressable>
           ))}

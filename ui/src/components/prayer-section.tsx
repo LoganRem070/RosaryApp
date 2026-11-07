@@ -93,12 +93,14 @@ const styles = StyleSheet.create({
   },
   reading: {
     fontSize: 14,
+    lineHeight: 18,
     color: '#ecc71e',
     textAlign: 'center',
     marginBottom: 20,
   },
   content: {
     fontSize: 12,
+    lineHeight: 16,
     color: '#ffffff',
     textAlign: 'center',
   },

@@ -1,19 +1,28 @@
 package com.example;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.sql.DriverManager;
 import java.sql.SQLException;
-
+import java.util.Properties;
 
 public class App {
 
-  static final String CONN_URL = "jdbc:postgresql://wlw7dia5b0.lq4yhtpxri.tsdb.cloud.timescale.com:30951/tsdb?sslmode=require&user=tsdbadmin&password=j61jo9eey58gdvi9";
+  public static void main(String[] args) throws IOException {
+    var config = new Properties();
+    try (var reader = Files.newBufferedReader(Path.of(".env"))) {
+      config.load(reader);
+    }
 
-  public static void main(String[] args) {
-    try (var conn = DriverManager.getConnection(CONN_URL)) {
+    var connUrl = config.getProperty("CONN_URL");
+    if (connUrl == null || connUrl.isBlank()) {
+      throw new IllegalStateException("CONN_URL is missing from .env");
+    }
 
-      var stmt = conn.createStatement();
-      var rs = stmt.executeQuery("select extname, extversion from pg_extension");
-
+    try (var conn = DriverManager.getConnection(connUrl);
+         var stmt = conn.createStatement();
+         var rs = stmt.executeQuery("select extname, extversion from pg_extension")) {
       while (rs.next()) {
         var extname = rs.getString("extname");
         var extversion = rs.getString("extversion");

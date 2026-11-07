@@ -36,7 +36,7 @@ export function PrayerSection({ pages, initialIndex }: PrayerSectionProps) {
       <Image style={styles.image} source={require('@/assets/images/rosary.png')} />
       {/* Page Content Box */}
       <ThemedView style={styles.pageBox}>
-        <ThemedText style={styles.title}>{currentPage.reading}</ThemedText>
+        <ThemedText style={styles.reading}>{currentPage.reading}</ThemedText>
         <ThemedText style={styles.content}>{currentPage.text}</ThemedText>
       </ThemedView>
 
@@ -91,14 +91,15 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 20,
   },
-  title: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    marginBottom: 8,
+  reading: {
+    fontSize: 14,
+    color: '#ecc71e',
+    textAlign: 'center',
+    marginBottom: 20,
   },
   content: {
-    fontSize: 14,
-    color: '#666',
+    fontSize: 12,
+    color: '#ffffff',
     textAlign: 'center',
   },
   arrowContainer: {

@@ -4,6 +4,7 @@ import { useLocalSearchParams } from 'expo-router';
 import { Image, Platform, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { BottomTabInset, MaxContentWidth, Spacing } from '@/constants/theme';
+import { PrayerSection } from '@/components/prayer-section';
 
 export default function PrayerScreen() {
   const { mystery } = useLocalSearchParams<{ mystery?: string }>();
@@ -27,8 +28,9 @@ export default function PrayerScreen() {
           {`${mystery} Mysteries`}
         </ThemedText>
 
-        <Image style={styles.image} source={require('@/assets/images/rosary.png')} />
- 
+        <PrayerSection pages={[{ reading: "1", text: "hi" }, { reading: "2", text: "no" }, { reading: "3", text: "bye" }]} initialIndex={0} />
+
+
       </SafeAreaView>
     </ThemedView>
   );

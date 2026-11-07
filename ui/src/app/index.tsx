@@ -68,7 +68,6 @@ export default function HomeScreen() {
           ))}
         </ThemedView>
 
-        {Platform.OS === 'web' && <WebBadge />}
       </SafeAreaView>
     </ThemedView>
   );

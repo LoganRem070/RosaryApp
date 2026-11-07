@@ -27,6 +27,8 @@ export default function AppTabs() {
           <TabTrigger name="explore" href="/explore" asChild>
             <TabButton>Info</TabButton>
           </TabTrigger>
+          <TabTrigger name="prayer" href="/prayer" asChild>
+          </TabTrigger>
         </CustomTabList>
       </TabList>
     </Tabs>

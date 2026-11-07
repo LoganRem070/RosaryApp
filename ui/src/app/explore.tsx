@@ -71,7 +71,7 @@ export default function TabTwoScreen() {
           </ThemedView>
 
         </ThemedView>
-        {Platform.OS === 'web' && <WebBadge />}
+        <WebBadge />
       </ThemedView>
     </ScrollView>
   );

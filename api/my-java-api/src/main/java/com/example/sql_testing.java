@@ -284,6 +284,7 @@ public final class sql_testing {
 	      ('Glorious', 6, 0, NULL, 7, NULL),
         ('Glorious', 6, 1, NULL, 8, NULL),
         ('Glorious', 6, 2, NULL, 9, NULL),
+        ('Glorious', 6, 3, NULL, 1, NULL),
         ('Luminous', 6, 3, NULL, 1, NULL),
         ('Luminous', 0, 0, NULL, 1, NULL),
         ('Luminous', 0, 1, NULL, 2, NULL),

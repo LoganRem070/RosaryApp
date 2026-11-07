@@ -28,6 +28,7 @@ export default function TabTwoScreen() {
     'Java',
     'Maven',
     'TigerData',
+    'SQL',
   ];
 
   const contentPlatformStyle = Platform.select({

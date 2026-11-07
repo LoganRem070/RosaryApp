@@ -8,6 +8,7 @@ import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { WebBadge } from '@/components/web-badge';
 import { BottomTabInset, MaxContentWidth, Spacing } from '@/constants/theme';
+import { useRouter } from 'expo-router';
 import { SymbolView } from 'expo-symbols';
 import { useTheme } from '@/hooks/use-theme';
 
@@ -32,18 +33,17 @@ function getDevMenuHint() {
 
 export default function HomeScreen() {
   const theme = useTheme();
+  const router = useRouter();
 
   const mysteries = ["Joyful", "Glorious", "Sorrowful", "Luminous"];
 
   return (
     <ThemedView style={styles.container}>
       <SafeAreaView style={styles.safeArea}>
-        <ThemedView style={styles.heroSection}>
-          <AnimatedIcon />
-          <ThemedText type="title" style={styles.title}>
-            Rosary App
-          </ThemedText>
-        </ThemedView>
+        <AnimatedIcon />
+        <ThemedText type="title" style={styles.title}>
+          Rosary App
+        </ThemedText>
 
         <ThemedText type="code" style={styles.code}>
           Select a Mystery
@@ -53,6 +53,12 @@ export default function HomeScreen() {
           {mysteries.map((mystery) => (
             <Pressable
               key={mystery}
+              onPress={() =>
+                router.push({
+                  pathname: '/prayer',
+                  params: { mystery },
+                })
+              }
               style={({ pressed }) => pressed && styles.pressed}
             >
               <ThemedView type="backgroundElement" style={styles.linkButton}>
@@ -76,6 +82,7 @@ const styles = StyleSheet.create({
   },
   safeArea: {
     flex: 1,
+    paddingTop: Platform.OS === 'web' ? Spacing.six : 0,
     paddingHorizontal: Spacing.four,
     alignItems: 'center',
     gap: Spacing.three,

@@ -326,7 +326,6 @@ public final class sql_testing {
         ('Glorious', 6, 1, NULL, 8),
         ('Glorious', 6, 2, NULL, 9),
         ('Glorious', 6, 3, NULL, 1),
-        ('Luminous', 6, 3, NULL, 1),
         ('Luminous', 0, 0, NULL, 1),
         ('Luminous', 0, 1, NULL, 2),
         ('Luminous', 0, 2, NULL, 3),

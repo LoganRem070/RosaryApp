@@ -126,7 +126,7 @@ export function PrayerSection({ mystery, language }: PrayerSectionProps) {
         ) : currentPage ? (
           <>
             <ThemedText style={styles.reading}>{currentPage.reading}</ThemedText>
-            <ThemedText style={styles.content}>{currentPage.text}</ThemedText>
+            <ThemedText style={[styles.content, { color: theme.text }]}>{currentPage.text}</ThemedText>
           </>
         ) : (
           <ThemedText>No prayer found for this position.</ThemedText>
@@ -194,7 +194,6 @@ const styles = StyleSheet.create({
   content: {
     fontSize: 12,
     lineHeight: 16,
-    color: '#ffffff',
     textAlign: 'center',
   },
   arrowContainer: {

@@ -13,6 +13,14 @@ import java.util.Properties;
 public class App {
 
   public static void main(String[] args) throws IOException, SQLException, InterruptedException {
+    try {
+      Class.forName("org.postgresql.Driver");
+    } catch (ClassNotFoundException e) {
+      throw new IllegalStateException(
+          "PostgreSQL JDBC driver is missing from the runtime classpath. Launch the API with Maven.",
+          e);
+    }
+
     var config = new Properties();
     Path workingDirectory = Path.of("").toAbsolutePath();
     Path envPath = workingDirectory.resolve(".env");

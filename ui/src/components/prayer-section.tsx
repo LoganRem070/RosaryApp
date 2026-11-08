@@ -14,9 +14,10 @@ type PrayerPage = {
 
 type PrayerSectionProps = {
   mystery: string;
+  language: string;
 };
 
-export function PrayerSection({ mystery }: PrayerSectionProps) {
+export function PrayerSection({ mystery, language }: PrayerSectionProps) {
   const [currentNumber, setCurrentNumber] = useState(0);
   const [currentDecade, setCurrentDecade] = useState(0);
   const [currentMystery, setCurrentMystery] = useState(mystery);
@@ -39,7 +40,7 @@ export function PrayerSection({ mystery }: PrayerSectionProps) {
 
     setLoading(true);
     setError(null);
-    http.getPrayerData(mystery, currentDecade, currentNumber)
+    http.getPrayerData(mystery, currentDecade, currentNumber, language)
       .then(async (rows) => {
         const row = rows[0];
         const image = row?.image
@@ -73,7 +74,7 @@ export function PrayerSection({ mystery }: PrayerSectionProps) {
     return () => {
       active = false;
     };
-  }, [mystery, currentDecade, currentNumber]);
+  }, [mystery, language, currentDecade, currentNumber]);
 
   const handlePrev = () => {
     if (currentDecade < 0) {return;}

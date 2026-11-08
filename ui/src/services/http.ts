@@ -57,12 +57,14 @@ export class http {
   static async getPrayerData(
     mystery: string,
     decade: number,
-    prayer: number
+    prayer: number,
+    language = 'English'
   ): Promise<RosaryApiRow[]> {
     const params = new URLSearchParams({
       mystery,
       decade: String(decade),
       number: String(prayer),
+      language,
     });
     const rows = await getJson<RosaryApiRow[]>(`${baseUrl}?${params.toString()}`);
     console.log('[Rosary API] Received data:', rows);

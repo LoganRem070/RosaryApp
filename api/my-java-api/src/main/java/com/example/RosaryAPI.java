@@ -189,12 +189,18 @@ public final class RosaryAPI {
 
   private static void setCorsHeaders(HttpExchange ex) {
     String origin = ex.getRequestHeaders().getFirst("Origin");
-    if (origin != null && isLocalOrigin(origin)) {
+    if (origin != null && isAllowedOrigin(origin)) {
       ex.getResponseHeaders().set("Access-Control-Allow-Origin", origin);
       ex.getResponseHeaders().set("Vary", "Origin");
     }
     ex.getResponseHeaders().set("Access-Control-Allow-Methods", "GET, OPTIONS");
     ex.getResponseHeaders().set("Access-Control-Allow-Headers", "Content-Type");
+  }
+
+  private static boolean isAllowedOrigin(String origin) {
+    return isLocalOrigin(origin)
+        || "https://grouprosary.us".equals(origin)
+        || "https://www.grouprosary.us".equals(origin);
   }
 
   private static boolean isLocalOrigin(String origin) {

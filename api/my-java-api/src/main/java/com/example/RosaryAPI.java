@@ -200,6 +200,10 @@ public final class RosaryAPI {
   private static boolean isAllowedOrigin(String origin) {
     return isLocalOrigin(origin)
         || "https://grouprosary.us".equals(origin)
+        || "grouprosary.us".equals(origin)
+        || "www.grouprosary.us".equals(origin)
+        || "http://grouprosary.us".equals(origin)
+        || "http://www.grouprosary.us".equals(origin)
         || "https://www.grouprosary.us".equals(origin);
   }
 

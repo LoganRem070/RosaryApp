@@ -13,10 +13,26 @@ import java.util.Properties;
 public class App {
 
   public static void main(String[] args) throws IOException, SQLException {
-    var config = new Properties();
-    System.out.println("Working dir: " + Path.of("").toAbsolutePath());
+    try {
+      Class.forName("org.postgresql.Driver");
+    } catch (ClassNotFoundException e) {
+      throw new IllegalStateException(
+          "PostgreSQL JDBC driver is missing from the runtime classpath. Launch the app with Maven.",
+          e);
+    }
 
-    try (var reader = Files.newBufferedReader(Path.of("api/my-java-api/.env"))) {
+    var config = new Properties();
+    Path workingDirectory = Path.of("").toAbsolutePath();
+    Path envPath = workingDirectory.resolve(".env");
+    if (!Files.isRegularFile(envPath)) {
+      envPath = workingDirectory.resolve("api/my-java-api/.env");
+    }
+    if (!Files.isRegularFile(envPath)) {
+      throw new IOException("Could not find .env in " + workingDirectory
+          + " or its api/my-java-api subdirectory");
+    }
+
+    try (var reader = Files.newBufferedReader(envPath)) {
       config.load(reader);
     }
 

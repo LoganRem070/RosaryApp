@@ -12,7 +12,7 @@ import java.util.Properties;
 
 public class App {
 
-  public static void main(String[] args) throws IOException, SQLException {
+  public static void main(String[] args) throws IOException, SQLException, InterruptedException {
     var config = new Properties();
     System.out.println("Working dir: " + Path.of("").toAbsolutePath());
 
@@ -26,6 +26,8 @@ public class App {
     }
 
     //sql_testing.seed(connUrl);
-    new RosaryAPI(connUrl).start(8081);
+    //new RosaryAPI(connUrl).start(8081);
+    Gemini_Translation gemini = new Gemini_Translation(config.getProperty("GEM_API_KEY"));
+    new RosaryAPI(connUrl, gemini).start(8081);
   }
 }

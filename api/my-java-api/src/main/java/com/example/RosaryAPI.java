@@ -5,6 +5,7 @@ import com.sun.net.httpserver.HttpServer;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.net.InetSocketAddress;
+import java.net.URI;
 import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
 import java.sql.Connection;
@@ -34,6 +35,13 @@ public final class RosaryAPI {
   }
 
   private void handleRosary(HttpExchange ex) throws IOException {
+    if ("OPTIONS".equalsIgnoreCase(ex.getRequestMethod())) {
+      setCorsHeaders(ex);
+      ex.sendResponseHeaders(204, -1);
+      ex.close();
+      return;
+    }
+
     if (!requireGet(ex)) {
       return;
     }
@@ -128,10 +136,37 @@ public final class RosaryAPI {
 
   private static void sendJson(HttpExchange ex, int status, String body) throws IOException {
     byte[] bytes = body.getBytes(StandardCharsets.UTF_8);
+    setCorsHeaders(ex);
     ex.getResponseHeaders().set("Content-Type", "application/json; charset=utf-8");
     ex.sendResponseHeaders(status, bytes.length);
     try (OutputStream os = ex.getResponseBody()) {
       os.write(bytes);
+    }
+  }
+
+  private static void setCorsHeaders(HttpExchange ex) {
+    String origin = ex.getRequestHeaders().getFirst("Origin");
+    if (origin != null && isLocalOrigin(origin)) {
+      ex.getResponseHeaders().set("Access-Control-Allow-Origin", origin);
+      ex.getResponseHeaders().set("Vary", "Origin");
+    }
+    ex.getResponseHeaders().set("Access-Control-Allow-Methods", "GET, OPTIONS");
+    ex.getResponseHeaders().set("Access-Control-Allow-Headers", "Content-Type");
+  }
+
+  private static boolean isLocalOrigin(String origin) {
+    try {
+      URI uri = URI.create(origin);
+      String host = uri.getHost();
+      return "http".equals(uri.getScheme())
+          && host != null
+          && (host.equals("localhost")
+              || host.equals("127.0.0.1")
+              || host.matches("10(?:\\.\\d{1,3}){3}")
+              || host.matches("192\\.168(?:\\.\\d{1,3}){2}")
+              || host.matches("172\\.(?:1[6-9]|2\\d|3[01])(?:\\.\\d{1,3}){2}"));
+    } catch (IllegalArgumentException e) {
+      return false;
     }
   }
 

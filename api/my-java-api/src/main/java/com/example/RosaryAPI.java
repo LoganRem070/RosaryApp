@@ -137,7 +137,7 @@ public final class RosaryAPI {
               .append(",\"number\":").append(rs.getInt("number"))
               .append(",\"language\":").append(jsonString(language))
               .append(",\"reading\":").append(jsonString(reading))
-              .append(",\"prayerName\":").append(jsonString(rs.getString("name")))
+              .append(",\"prayerName\":").append(jsonString(prayerName))
               .append(",\"prayerText\":").append(jsonString(prayerText))
               .append(",\"image\":").append(img == null ? "null" : jsonString(Base64.getEncoder().encodeToString(img)))
               .append('}');

@@ -10,7 +10,7 @@ import java.time.Duration;
 
 public final class Gemini_Translation {
 
-  private static final String MODEL = "gemini-3.5-flash";
+  private static final String MODEL = "gemini-3.5-flash-lite";
   private static final String ENDPOINT =
       "https://generativelanguage.googleapis.com/v1beta/models/" + MODEL + ":generateContent";
 

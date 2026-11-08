@@ -11,6 +11,8 @@ import { BottomTabInset, MaxContentWidth, Spacing } from '@/constants/theme';
 import { useRouter } from 'expo-router';
 import { SymbolView } from 'expo-symbols';
 import { useTheme } from '@/hooks/use-theme';
+import { Dropdown } from 'react-native-element-dropdown';
+import { useState } from 'react';
 
 function getDevMenuHint() {
   if (Platform.OS === 'web') {
@@ -37,6 +39,16 @@ export default function HomeScreen() {
 
   const mysteries = ["Joyful", "Glorious", "Sorrowful", "Luminous"];
 
+  const languages = [
+    { label: 'English', value: 'English' },
+    { label: 'Latin', value: 'Latin' },
+    { label: 'Spanish', value: 'Spanish' },
+    { label: 'Polish', value: 'Polish' },
+    { label: 'Italian', value: 'Italian' },
+    { label: 'French', value: 'French' },
+  ];
+  const [currentLang, setLang] = useState('English');
+
   return (
     <ThemedView style={styles.container}>
       <SafeAreaView style={styles.safeArea}>
@@ -56,7 +68,7 @@ export default function HomeScreen() {
               onPress={() =>
                 router.push({
                   pathname: '/prayer',
-                  params: { mystery },
+                  params: { mystery, language: currentLang },
                 })
               }
               style={({ pressed }) => pressed && styles.pressed}
@@ -68,12 +80,41 @@ export default function HomeScreen() {
           ))}
         </ThemedView>
 
+        <Dropdown
+          style={styles.dropdown}
+          containerStyle={[styles.dropdownMenu, { backgroundColor: theme.backgroundElement }]}
+          placeholderStyle={[styles.dropdownText, { color: theme.textSecondary }]}
+          selectedTextStyle={[styles.dropdownText, { color: theme.text }]}
+          itemTextStyle={{ color: theme.text }}
+          activeColor={theme.backgroundSelected}
+          data={languages}
+          labelField="label"
+          valueField="value"
+          placeholder="Select a language"
+          onChange={(item) => setLang(item.value)}
+          accessibilityLabel="Select prayer language"
+        />
+
       </SafeAreaView>
     </ThemedView>
   );
 }
 
 const styles = StyleSheet.create({
+  dropdown: {
+    width: '100%',
+    height: 40,
+    borderColor: '#888',
+    borderWidth: 1,
+    borderRadius: 8,
+    paddingHorizontal: 12,
+  },
+  dropdownMenu: {
+    borderRadius: 8,
+  },
+  dropdownText: {
+    fontSize: 16,
+  },
   container: {
     flex: 1,
     justifyContent: 'center',

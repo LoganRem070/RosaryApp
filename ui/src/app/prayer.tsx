@@ -9,7 +9,10 @@ import { PrayerSection } from '@/components/prayer-section';
 import { useTheme } from '@/hooks/use-theme';
 
 export default function PrayerScreen() {
-  const { mystery } = useLocalSearchParams<{ mystery?: string }>();
+  const { mystery, language } = useLocalSearchParams<{
+    mystery?: string;
+    language?: string;
+  }>();
   const theme = useTheme();
 
   return (
@@ -37,6 +40,7 @@ export default function PrayerScreen() {
                 </ThemedText>
                 <PrayerSection
                   mystery={mystery as string}
+                  language={language ?? 'English'}
                 />
               </>
             )}

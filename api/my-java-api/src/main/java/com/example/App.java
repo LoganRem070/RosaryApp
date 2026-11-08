@@ -12,15 +12,7 @@ import java.util.Properties;
 
 public class App {
 
-  public static void main(String[] args) throws IOException, SQLException {
-    try {
-      Class.forName("org.postgresql.Driver");
-    } catch (ClassNotFoundException e) {
-      throw new IllegalStateException(
-          "PostgreSQL JDBC driver is missing from the runtime classpath. Launch the app with Maven.",
-          e);
-    }
-
+  public static void main(String[] args) throws IOException, SQLException, InterruptedException {
     var config = new Properties();
     Path workingDirectory = Path.of("").toAbsolutePath();
     Path envPath = workingDirectory.resolve(".env");
@@ -42,6 +34,8 @@ public class App {
     }
 
     //sql_testing.seed(connUrl);
-    new RosaryAPI(connUrl).start(8081);
+    //new RosaryAPI(connUrl).start(8081);
+    Gemini_Translation gemini = new Gemini_Translation(config.getProperty("GEM_API_KEY"));
+    new RosaryAPI(connUrl, gemini).start(8081);
   }
 }

@@ -1,5 +1,27 @@
 # Welcome to your Expo app 👋
 
+## Deploy the web app to GitHub Pages
+
+The GitHub Actions workflow in `.github/workflows/deploy-pages.yml` builds the
+static web export and publishes it to GitHub Pages whenever `main` is updated.
+The repository's `CNAME` file keeps the site on `grouprosary.us`.
+
+Before deploying:
+
+1. In the repository's **Settings → Pages**, set the build and deployment
+   source to **GitHub Actions**.
+2. In **Settings → Secrets and variables → Actions → Variables**, add
+   `EXPO_PUBLIC_API_URL` with the public HTTPS URL for the API, including its
+   `/rosary` path (for example, `https://api.example.com/rosary`).
+3. Configure the API host with `ROSARY_ALLOWED_ORIGINS=https://grouprosary.us`
+   so browsers allow the deployed site to call it. If you also use a `www`
+   hostname, include both origins separated by a comma.
+4. Ensure the API is publicly reachable over HTTPS, then push to `main` or run
+   the **Deploy web to GitHub Pages** workflow manually.
+
+The API is a separate Java service and must be deployed independently; the
+frontend build cannot make a local API server publicly accessible.
+
 This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
 
 ## Get started

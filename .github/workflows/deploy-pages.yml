@@ -1,0 +1,75 @@
+name: Deploy web to GitHub Pages
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: github-pages
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: ui/package-lock.json
+
+      - name: Configure GitHub Pages
+        uses: actions/configure-pages@v5
+
+      - name: Install dependencies
+        working-directory: ui
+        run: npm ci
+
+      - name: Build static site
+        working-directory: ui
+        env:
+          EXPO_PUBLIC_API_URL: ${{ vars.EXPO_PUBLIC_API_URL }}
+        run: |
+          if [ -z "$EXPO_PUBLIC_API_URL" ]; then
+            echo "::error::Set the EXPO_PUBLIC_API_URL Actions variable to the public HTTPS API URL ending in /rosary."
+            exit 1
+          fi
+          case "$EXPO_PUBLIC_API_URL" in
+            https://*/rosary) ;;
+            *)
+              echo "::error::EXPO_PUBLIC_API_URL must use HTTPS and end in /rosary."
+              exit 1
+              ;;
+          esac
+          npm run build:web
+          cp ../CNAME dist/CNAME
+          touch dist/.nojekyll
+          mkdir -p dist/prayer dist/explore
+          cp dist/prayer.html dist/prayer/index.html
+          cp dist/explore.html dist/explore/index.html
+          if [ ! -f dist/404.html ]; then
+            cp dist/index.html dist/404.html
+          fi
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: ui/dist
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

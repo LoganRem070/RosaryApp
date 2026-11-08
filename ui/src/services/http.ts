@@ -16,7 +16,7 @@ type RosaryApiRow = {
 const baseUrl =
   process.env.EXPO_PUBLIC_API_URL ??
   (Platform.OS === 'android'
-    ? 'http://10.0.2.2:8081/rosary'
+    ? 'http://129.21.67.159:8081/rosary'
     : Platform.OS === 'web' && typeof window !== 'undefined'
       ? `http://${window.location.hostname}:8081/rosary`
       : 'http://localhost:8081/rosary');

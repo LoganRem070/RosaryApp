@@ -7,14 +7,10 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { BottomTabInset, MaxContentWidth, Spacing } from '@/constants/theme';
 import { PrayerSection } from '@/components/prayer-section';
 import { useTheme } from '@/hooks/use-theme';
-import { http } from '@/services/http';
-import type { PrayerPage } from '@/services/http';
 
 export default function PrayerScreen() {
   const { mystery } = useLocalSearchParams<{ mystery?: string }>();
   const theme = useTheme();
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
 
   return (
     <ThemedView style={styles.container}>

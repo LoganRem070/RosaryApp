@@ -13,13 +13,7 @@ type RosaryApiRow = {
   image: string | null;
 };
 
-const baseUrl =
-  process.env.EXPO_PUBLIC_API_URL ??
-  (Platform.OS === 'android'
-    ? 'http://129.21.67.159:8081/rosary'
-    : Platform.OS === 'web' && typeof window !== 'undefined'
-      ? `http://${window.location.hostname}:8081/rosary`
-      : 'http://localhost:8081/rosary');
+const baseUrl = 'https://rosaryapp-production.up.railway.app/rosary'; 
 
 async function getJson<T>(url: string): Promise<T> {
   let response: Response;

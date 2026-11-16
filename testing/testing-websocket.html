@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Rosary Room Test</title>
+<style>
+  body { font-family: sans-serif; max-width: 760px; margin: 2rem auto; padding: 0 1rem; }
+  fieldset { margin-bottom: 1rem; }
+  input, select, button { margin: 0.2rem; padding: 0.4rem 0.7rem; }
+  #status { font-weight: bold; }
+  #bead { white-space: pre-wrap; min-height: 5rem; padding: 1rem; background: #f4f4f4; border-radius: 8px; }
+  #log { font-family: monospace; font-size: 0.85rem; background: #111; color: #0f0;
+         padding: 1rem; height: 260px; overflow-y: auto; white-space: pre-wrap; }
+</style>
+</head>
+<body>
+<h2>Rosary Room Test</h2>
+
+<p>
+  Server: <input id="url" value="ws://localhost:8090" size="28">
+  <button id="connect">Connect</button>
+  Status: <span id="status">disconnected</span>
+</p>
+
+<fieldset>
+  <legend>Create a room</legend>
+  <select id="mystery">
+    <option>Joyful</option>
+    <option>Luminous</option>
+    <option>Sorrowful</option>
+    <option>Glorious</option>
+  </select>
+  Language: <input id="language" value="English" size="12">
+  <button id="create">Create</button>
+</fieldset>
+
+<fieldset>
+  <legend>Join a room</legend>
+  <input id="code" placeholder="Room code" size="10">
+  <button id="join">Join</button>
+</fieldset>
+
+<fieldset>
+  <legend>Current room</legend>
+  Room code: <b id="roomId">-</b>
+  <button id="next" disabled>Next bead</button>
+  <button id="leave" disabled>Leave</button>
+  <div id="bead">Not in a room.</div>
+</fieldset>
+
+<h3>Messages</h3>
+<div id="log"></div>
+
+<script>
+  let ws = null;
+  const $ = (id) => document.getElementById(id);
+
+  function log(text) {
+    const div = document.createElement("div");
+    div.textContent = new Date().toLocaleTimeString() + "  " + text;
+    $("log").appendChild(div);
+    $("log").scrollTop = $("log").scrollHeight;
+  }
+
+  function setInRoom(on) {
+    $("next").disabled = !on;
+    $("leave").disabled = !on;
+  }
+
+  function send(obj) {
+    if (!ws || ws.readyState !== WebSocket.OPEN) {
+      log("Not connected. Click Connect first.");
+      return;
+    }
+    log("sent: " + JSON.stringify(obj));
+    ws.send(JSON.stringify(obj));
+  }
+
+  $("connect").onclick = () => {
+    if (ws) ws.close();
+    const url = $("url").value.trim();
+    $("status").textContent = "connecting...";
+    log("opening " + url);
+
+    ws = new WebSocket(url);
+
+    ws.onopen = () => {
+      $("status").textContent = "connected";
+      log("connected");
+    };
+
+    ws.onerror = () => {
+      log("connection error. Is the room server running on this port?");
+    };
+
+    ws.onclose = (e) => {
+      $("status").textContent = "disconnected";
+      log("closed (code " + e.code + ")");
+      $("roomId").textContent = "-";
+      setInRoom(false);
+    };
+
+    ws.onmessage = (e) => {
+      log("received: " + e.data);
+      const msg = JSON.parse(e.data);
+
+      if (msg.type === "error") {
+        log("server error: " + msg.message);
+        return;
+      }
+
+      $("roomId").textContent = msg.roomId;
+      setInRoom(true);
+
+      if (msg.type === "waiting") {
+        $("bead").textContent = "Room ready. Press Next to start.";
+      } else if (msg.type === "step") {
+        $("bead").textContent =
+          `Bead ${msg.index + 1} of ${msg.total}: ${msg.prayerName}\n` +
+          `${msg.reading}\n\n${msg.prayerText}`;
+      } else if (msg.type === "complete") {
+        $("bead").textContent = "Rosary complete.";
+      }
+    };
+  };
+
+  $("create").onclick = () =>
+    send({ type: "create", mystery: $("mystery").value, language: $("language").value });
+
+  $("join").onclick = () =>
+    send({ type: "join", roomId: $("code").value.trim() });
+
+  $("next").onclick = () => send({ type: "next" });
+
+  $("leave").onclick = () => {
+    send({ type: "leave" });
+    $("roomId").textContent = "-";
+    $("bead").textContent = "Not in a room.";
+    setInRoom(false);
+  };
+</script>
+</body>
+</html>

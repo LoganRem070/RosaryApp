@@ -1,0 +1,12 @@
+
+# Dependencies
+/node_modules/
+
+# Expo generated files
+/.expo/
+
+# Build output
+/dist/
+
+# Local development files
+.vscode/

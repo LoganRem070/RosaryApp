@@ -39,7 +39,7 @@ public final class RosaryAPI {
 
   private static final Map<String, String> TRANSLATION_CACHE = new ConcurrentHashMap<>();
 
-  private String translateCached(String text, String language) throws IOException, InterruptedException {
+  String translateCached(String text, String language) throws IOException, InterruptedException {
     if (text == null || text.isBlank()) {
       return text;
     }
@@ -197,7 +197,7 @@ public final class RosaryAPI {
     ex.getResponseHeaders().set("Access-Control-Allow-Headers", "Content-Type");
   }
 
-  private static boolean isAllowedOrigin(String origin) {
+  static boolean isAllowedOrigin(String origin) {
     return isLocalOrigin(origin)
         || "https://grouprosary.us".equals(origin)
         || "grouprosary.us".equals(origin)

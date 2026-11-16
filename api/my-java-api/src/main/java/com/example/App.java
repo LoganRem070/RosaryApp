@@ -1,13 +1,10 @@
 package com.example;
 
 import java.io.IOException;
+import java.net.InetSocketAddress;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.sql.Connection;
-import java.sql.DriverManager;
-import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.sql.Statement;
 import java.util.Properties;
 
 public class App {
@@ -44,6 +41,11 @@ public class App {
     //sql_testing.seed(connUrl);
     //new RosaryAPI(connUrl).start(8081);
     Gemini_Translation gemini = new Gemini_Translation(config.getProperty("GEM_API_KEY"));
-    new RosaryAPI(connUrl, gemini).start(8081);
+    var api = new RosaryAPI(connUrl, gemini);   // create the object once
+    api.start(8081);
+
+    // Pass the method of this object, not the class
+    var rooms = new RosaryRoomServer(new InetSocketAddress(8090), connUrl, api::translateCached);
+    rooms.start();
   }
 }

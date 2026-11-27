@@ -1,4 +1,8 @@
 tiger-cloud-rosary-credentials.txt
 api/my-java-api/.env
 
+api/my-java-api/target/
+
 ui/.env
+api/my-java-api/target/classes/com/example/sql_testing.class
+api/my-java-api/target/classes/com/example/*

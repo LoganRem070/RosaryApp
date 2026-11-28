@@ -4,6 +4,7 @@ import { useEffect } from 'react';
 import { useColorScheme } from 'react-native';
 
 import AppTabs from '@/components/app-tabs';
+import { RoomProvider } from '@/lib/roomContext';
 
 SplashScreen.preventAutoHideAsync();
 
@@ -16,7 +17,9 @@ export default function TabLayout() {
 
   return (
     <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-      <AppTabs />
+      <RoomProvider>
+        <AppTabs />
+      </RoomProvider>
     </ThemeProvider>
   );
 }

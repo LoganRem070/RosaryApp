@@ -1,5 +1,7 @@
 package com.example;
 
+import com.google.gson.JsonArray;
+import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import java.io.IOException;
@@ -11,6 +13,7 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -34,19 +37,20 @@ public final class RosaryRoomServer extends WebSocketServer {
   private static final String ID_CHARS = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
   private static final SecureRandom RANDOM = new SecureRandom();
 
-  private record Step(int decade, int number, String reading, String prayerName, String prayerText) {}
+  private record Step(String mystery, int decade, int number,
+                      String reading, String prayerName, String prayerText) {}
 
   private static final class Room {
     final String id;
-    final String mystery;
+    final List<String> mysteries;
     final String language;
     final List<Step> steps;
     final Set<WebSocket> members = ConcurrentHashMap.newKeySet();
-    int position = -1; // -1 = not started, steps.size() = finished
+    int position = -1; // -1 = lobby, 0..n-1 = current bead, n = complete
 
-    Room(String id, String mystery, String language, List<Step> steps) {
+    Room(String id, List<String> mysteries, String language, List<Step> steps) {
       this.id = id;
-      this.mystery = mystery;
+      this.mysteries = mysteries;
       this.language = language;
       this.steps = steps;
     }
@@ -72,7 +76,6 @@ public final class RosaryRoomServer extends WebSocketServer {
   public ServerHandshakeBuilder onWebsocketHandshakeReceivedAsServer(
       WebSocket conn, Draft draft, ClientHandshake request) throws InvalidDataException {
     String origin = request.getFieldValue("Origin");
-    // Browsers send Origin; tools like curl do not, so a missing Origin is allowed
     if (origin != null && !origin.isEmpty() && !RosaryAPI.isAllowedOrigin(origin)) {
       throw new InvalidDataException(CloseFrame.POLICY_VALIDATION, "Origin not allowed");
     }
@@ -81,7 +84,7 @@ public final class RosaryRoomServer extends WebSocketServer {
 
   @Override
   public void onOpen(WebSocket conn, ClientHandshake handshake) {
-    // Nothing to do until the client sends create or join
+    // Nothing until the client sends create or join
   }
 
   @Override
@@ -100,9 +103,9 @@ public final class RosaryRoomServer extends WebSocketServer {
       JsonObject msg = JsonParser.parseString(message).getAsJsonObject();
       String type = msg.get("type").getAsString();
       switch (type) {
-        case "create" -> createRoom(conn, msg.get("mystery").getAsString(),
-            optional(msg, "language", "English"));
-        case "join" -> joinRoom(conn, msg.get("roomId").getAsString().toUpperCase());
+        case "create" -> createRoom(conn, msg);
+        case "join" -> joinRoom(conn, msg.get("roomId").getAsString().trim().toUpperCase());
+        case "start" -> startRoom(conn);
         case "next" -> nextStep(conn);
         case "prev" -> prevStep(conn);
         case "leave" -> leave(conn);
@@ -110,27 +113,42 @@ public final class RosaryRoomServer extends WebSocketServer {
       }
     } catch (Exception e) {
       System.err.println("Room request failed: " + e);
-      sendError(conn, "Bad request or server error: " + e.getMessage());
+      sendError(conn, "Request failed: " + e.getMessage());
     }
   }
 
   // ---------- room actions ----------
 
-  private void createRoom(WebSocket conn, String mystery, String language) throws Exception {
-    if (!MYSTERIES.contains(mystery)) {
-      sendError(conn, "Unknown mystery: " + mystery);
+  private void createRoom(WebSocket conn, JsonObject msg) throws Exception {
+    List<String> mysteries = readMysteries(msg);
+    if (mysteries.isEmpty()) {
+      sendError(conn, "Choose at least one mystery");
       return;
     }
-    String lang = language.isBlank() ? "English" : language.trim();
+    for (String m : mysteries) {
+      if (!MYSTERIES.contains(m)) {
+        sendError(conn, "Unknown mystery: " + m);
+        return;
+      }
+    }
 
-    List<Step> steps = loadSteps(mystery);
+    String language = msg.has("language") ? msg.get("language").getAsString().trim() : "";
+    if (language.isEmpty()) {
+      language = "English";
+    }
+
+    // Steps for each mystery, in the order the mysteries were chosen
+    List<Step> steps = new ArrayList<>();
+    for (String m : mysteries) {
+      steps.addAll(loadSteps(m));
+    }
     if (steps.isEmpty()) {
-      sendError(conn, "No prayers found for " + mystery);
+      sendError(conn, "No prayers found for the selected mysteries");
       return;
     }
 
     leave(conn);
-    Room room = new Room(newRoomId(), mystery, lang, steps);
+    Room room = new Room(newRoomId(), mysteries, language, steps);
     rooms.put(room.id, room);
     addMember(conn, room);
   }
@@ -145,23 +163,30 @@ public final class RosaryRoomServer extends WebSocketServer {
     addMember(conn, room);
   }
 
+  private void startRoom(WebSocket conn) throws Exception {
+    Room room = memberships.get(conn);
+    if (room == null) {
+      sendError(conn, "Join or create a room first");
+      return;
+    }
+    synchronized (room) {
+      int first = Math.max(room.position, 0);
+      publish(room, first);
+    }
+  }
+
   private void nextStep(WebSocket conn) throws Exception {
     Room room = memberships.get(conn);
     if (room == null) {
       sendError(conn, "Join or create a room first");
       return;
     }
-
-    // The lock keeps messages in order when two members press Next at the same time
     synchronized (room) {
-      int candidate = Math.min(room.position + 1, room.steps.size());
-      String json = render(room, candidate);
-      room.position = candidate;
-      for (WebSocket member : room.members) {
-        if (member.isOpen()) {
-          member.send(json);
-        }
+      if (room.position < 0) {
+        sendError(conn, "Press Start first");
+        return;
       }
+      publish(room, Math.min(room.position + 1, room.steps.size()));
     }
   }
 
@@ -171,17 +196,11 @@ public final class RosaryRoomServer extends WebSocketServer {
       sendError(conn, "Join or create a room first");
       return;
     }
-
-    // The lock keeps messages in order when two members press Next at the same time
     synchronized (room) {
-      int candidate = Math.max(room.position - 1, -1);
-      String json = render(room, candidate);
-      room.position = candidate;
-      for (WebSocket member : room.members) {
-        if (member.isOpen()) {
-          member.send(json);
-        }
+      if (room.position <= 0) {
+        return; // already at the first bead, or still in the lobby
       }
+      publish(room, room.position - 1);
     }
   }
 
@@ -189,7 +208,7 @@ public final class RosaryRoomServer extends WebSocketServer {
     synchronized (room) {
       room.members.add(conn);
       memberships.put(conn, room);
-      conn.send(render(room, room.position));
+      publish(room, room.position); // everyone sees the new participant count
     }
   }
 
@@ -198,18 +217,39 @@ public final class RosaryRoomServer extends WebSocketServer {
     if (room == null) {
       return;
     }
-    room.members.remove(conn);
-    if (room.members.isEmpty()) {
-      rooms.remove(room.id);
+    synchronized (room) {
+      room.members.remove(conn);
+      if (room.members.isEmpty()) {
+        rooms.remove(room.id);
+        return;
+      }
+      try {
+        publish(room, room.position);
+      } catch (Exception e) {
+        System.err.println("Could not update room " + room.id + ": " + e.getMessage());
+      }
+    }
+  }
+
+  /**
+   * Renders the state first, so a translation failure leaves the room unchanged.
+   * Then sets the position and sends the same message to every member.
+   */
+  private void publish(Room room, int index) throws IOException, InterruptedException {
+    String json = render(room, index);
+    room.position = index;
+    for (WebSocket member : room.members) {
+      if (member.isOpen()) {
+        member.send(json);
+      }
     }
   }
 
   // ---------- rendering ----------
 
-  /** Builds the JSON message for a position in the room. Translates only if needed. */
   private String render(Room room, int index) throws IOException, InterruptedException {
     if (index < 0) {
-      return base("waiting", room, index).toString();
+      return base("lobby", room, index).toString();
     }
     if (index >= room.steps.size()) {
       return base("complete", room, room.steps.size()).toString();
@@ -227,6 +267,7 @@ public final class RosaryRoomServer extends WebSocketServer {
     }
 
     JsonObject o = base("step", room, index);
+    o.addProperty("mystery", s.mystery());
     o.addProperty("decade", s.decade());
     o.addProperty("number", s.number());
     o.addProperty("reading", reading);
@@ -239,8 +280,13 @@ public final class RosaryRoomServer extends WebSocketServer {
     JsonObject o = new JsonObject();
     o.addProperty("type", type);
     o.addProperty("roomId", room.id);
-    o.addProperty("mystery", room.mystery);
+    JsonArray mysteries = new JsonArray();
+    for (String m : room.mysteries) {
+      mysteries.add(m);
+    }
+    o.add("mysteries", mysteries);
     o.addProperty("language", room.language);
+    o.addProperty("participants", room.members.size());
     o.addProperty("index", index);
     o.addProperty("total", room.steps.size());
     return o;
@@ -256,8 +302,9 @@ public final class RosaryRoomServer extends WebSocketServer {
   // ---------- database ----------
 
   private List<Step> loadSteps(String mystery) throws SQLException {
+    // Only rows that have a reading are beads. Adjust this filter once the data is final.
     String sql = """
-        SELECT r.decade, r.number, r.reading, p.name, p.text
+        SELECT r.mystery, r.decade, r.number, r.reading, p.name, p.text
         FROM rosary r
         INNER JOIN prayers p ON p.prayer_id = r.prayer_id
         WHERE r.mystery = ?
@@ -271,6 +318,7 @@ public final class RosaryRoomServer extends WebSocketServer {
       try (ResultSet rs = ps.executeQuery()) {
         while (rs.next()) {
           steps.add(new Step(
+              rs.getString("mystery"),
               rs.getInt("decade"),
               rs.getInt("number"),
               rs.getString("reading"),
@@ -284,6 +332,18 @@ public final class RosaryRoomServer extends WebSocketServer {
 
   // ---------- helpers ----------
 
+  private static List<String> readMysteries(JsonObject msg) {
+    Set<String> out = new LinkedHashSet<>();
+    if (msg.has("mysteries") && msg.get("mysteries").isJsonArray()) {
+      for (JsonElement e : msg.getAsJsonArray("mysteries")) {
+        out.add(e.getAsString());
+      }
+    } else if (msg.has("mystery")) {
+      out.add(msg.get("mystery").getAsString());
+    }
+    return new ArrayList<>(out);
+  }
+
   private String newRoomId() {
     while (true) {
       StringBuilder sb = new StringBuilder(6);
@@ -295,9 +355,5 @@ public final class RosaryRoomServer extends WebSocketServer {
         return id;
       }
     }
-  }
-
-  private static String optional(JsonObject o, String key, String fallback) {
-    return o.has(key) ? o.get(key).getAsString() : fallback;
   }
 }
